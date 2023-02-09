@@ -61,7 +61,7 @@ public Q_SLOTS:
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
     void udp_cam_read();
-    void combineDatagram(QByteArray inputDatagram);
+    void Decoding_Datagram(QByteArray inputDatagram);
     void showVideo();
 
 private:

@@ -24,9 +24,10 @@ using namespace Qt;
 
 string STR_USB_CAM = "USB CAM";
 
+//QHostAddress ROBOT_IP = QHostAddress("192.168.0.60"); //ROBOT
+//QHostAddress OPERATOR_IP = QHostAddress("192.168.0.130"); //OPERATOR
 QHostAddress ROBOT_IP = QHostAddress("192.168.188.100"); //ROBOT
 QHostAddress OPERATOR_IP = QHostAddress("192.168.188.253"); //OPERATOR
-
 uint16_t ROBOT_PORT = 9999; //RX, TX
 uint16_t other_PORT = 8888;
 /*****************************************************************************
@@ -96,51 +97,25 @@ void MainWindow::udp_read(){
 }
 
 void MainWindow::udp_cam_read(){
+//  QByteArray cam_buffer;
+//  ROS_INFO("Image Trasfer");
+//  cam_buffer.resize(m_pUdpSocket->pendingDatagramSize());
+//  m_pUdpSocket->readDatagram(cam_buffer.data(), cam_buffer.size(), &ROBOT_IP, &other_PORT);
+//  combineDatagram(cam_buffer);
+//  cam_buffer.clear();
+
   QByteArray cam_buffer;
   ROS_INFO("Image Trasfer");
   cam_buffer.resize(m_pUdpSocket->pendingDatagramSize());
   m_pUdpSocket->readDatagram(cam_buffer.data(), cam_buffer.size(), &ROBOT_IP, &other_PORT);
-  combineDatagram(cam_buffer);
+  Decoding_Datagram(cam_buffer);
   cam_buffer.clear();
 }
 
-void MainWindow::combineDatagram(QByteArray inputDatagram){
-  image_cnt_now = (quint8)inputDatagram.at(0);
-
-  if((image_cnt_now == (image_cnt_past+1)) && (image_cnt_now < 76))
-  {
-    qDebug() << "Image count now: " << (quint8)image_cnt_now;
-    inputDatagram.remove(0,1);    // remove packet count array[0]
-    //qDebug() << "size2: "<<inputDatagram.size();
-    image_buffer.append(inputDatagram);
-
-    image_cnt_past = image_cnt_now;
-  }
-
-  if(image_cnt_past == 75)
-  {
-    qDebug() << image_buffer.size();
-
-    int cnt=0;
-    int cnt_for=1;
-
-    for(int i=0;i<240;i++)
-    {
-      for(int j=0;j<320;j++)
-      {
-        udp_image.at<Vec3b>(i,j)[0] = (unsigned char)image_buffer.at(cnt);
-        cnt++;
-        udp_image.at<Vec3b>(i,j)[1] = (unsigned char)image_buffer.at(cnt);
-        cnt++;
-        udp_image.at<Vec3b>(i,j)[2] = (unsigned char)image_buffer.at(cnt);
-        cnt++;
-      }
-      cnt_for++;
-    }
-    image_cnt_past=0;
-    image_cnt_now=0;
-    image_buffer.clear();
-  }
+void MainWindow::Decoding_Datagram(QByteArray inputDatagram)
+{
+  std::vector<uchar> usb1_decoding(inputDatagram.begin(), inputDatagram.end());
+  udp_image = imdecode(Mat(usb1_decoding),CV_LOAD_IMAGE_COLOR);
 }
 
 void MainWindow::showVideo()
